@@ -23,8 +23,15 @@ struct BallWithDirect : public sf::CircleShape{
 };
 
 struct BoxWithPoints : public sf::RectangleShape {
+    BoxWithPoints(sf::Vector2f size, int p) : sf::RectangleShape(size){
+        points = p;
+    }
     int points;   
 };
+
+bool isColision(sf::RectangleShape& box, sf::CircleShape& ball){
+        //implementIt
+}
 
 int main(){
     
@@ -95,9 +102,24 @@ int main(){
                 case spawning:{
                     std::cout << "-> waiting" << std::endl;
                     state = waiting;
+                    
+                    for (auto box = boxes.end() - 1; box != boxes.begin() - 1; box--){
+                        
+                        box->move(0,boxSize);
+                        
+                        if(box->getPosition().y > 8*boxSize){
+                            box = boxes.erase(box);
+                            std::cout << "erase box but you should have died" << std::endl;
+                        }   
+                    }
+
+                    
                     for(int i = 0; i < 8; ++i){
                         if(std::rand()%2){
-                            BoxWithPoints box;
+                            int points = 5;
+                            BoxWithPoints box(sf::Vector2f(boxSize, boxSize), points);
+                            box.setPosition(sf::Vector2f(boxSize*i, 0));
+                            boxes.push_back(box);
                         }
                     }
                 }
@@ -110,15 +132,16 @@ int main(){
                 }
                     break;
                 case touching:{
-                    if(!sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    shootingAngle = getAngle(shooterPosition, mousePos);
+                    
+                    if(!sf::Mouse::isButtonPressed(sf::Mouse::Left) && (std::abs(shootingAngle) > 10 && std::abs(shootingAngle) < 180)){
                         std::cout << "-> bouncing" << std::endl;
                         state = bouncing;
                         ballsShooted = 0;
                         timeBetweenShoots = timeNeededToShoot;
                     }      
-                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                     
-                    shootingAngle = getAngle(shooterPosition, mousePos);
                     shooterGuide.setPosition(shooterPosition);
                     shooterGuide.setRotation(shootingAngle);
                     std::cout << "=D " << shootingAngle << std::endl;
@@ -157,12 +180,22 @@ int main(){
                         ball->setPosition(oldPosition);
                         ball->move(speed * ball->dir.x, speed * ball->dir.y);
                         
+                        for (auto box = boxes.end() - 1; box != boxes.begin() - 1; box--){
+                           //if colision remove point from box
+                            if(box->points <= 0){
+                                box = boxes.erase(box);
+                                std::cout << "killed erase box" << std::endl;
+                            }   
+                        }
+                        
                         if(ball->getPosition().y > size.y+ballRadius){
                             ball = balls.erase(ball);
                             std::cout << "erase" << std::endl;
                         }   
+                        
                     }
-                      if(balls.size() == 0){
+                    
+                    if(balls.size() == 0){
                             std::cout << "-> spawning" << std::endl;
                         state = spawning;
                     }
@@ -177,6 +210,10 @@ int main(){
             window.draw(shooterGuide);
             for(auto ball : balls){                        
                 window.draw(ball);
+            }
+
+            for(auto box : boxes){                        
+                window.draw(box);
             }
             
             window.display();

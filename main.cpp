@@ -6,6 +6,9 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
 
+
+#define Ycolisionfactor 0.9
+
 float getAngle(sf::Vector2f &orig, sf::Vector2i &des) {
     return std::atan2(des.y - orig.y, des.x - orig.x)*180/(M_PI);
 }
@@ -42,24 +45,29 @@ bool ballInBox(sf::RectangleShape& box, BallWithDirect& ball){
     if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
        && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
         ball.dir.x *= -1;
+        
+        if(ball.dir.y < 0) ball.dir.y *= Ycolisionfactor;
         return true;
         }
     point = sf::Vector2f(ballPos.x - ballRadius, ballPos.y);
     if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
        && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
         ball.dir.x *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= Ycolisionfactor;
         return true;
         }
     point = sf::Vector2f(ballPos.x, ballPos.y + ballRadius);
     if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
        && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
         ball.dir.y *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= Ycolisionfactor;
         return true;
         }
     point = sf::Vector2f(ballPos.x, ballPos.y - ballRadius);
     if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
        && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
         ball.dir.y *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= Ycolisionfactor;
         return true;
         }
     return false;
@@ -74,32 +82,32 @@ bool isColision_andBounce(sf::RectangleShape& box, BallWithDirect& ball){
         return true;
     }
     
-    //box in ball
+ /*   //box in ball
     sf::Vector2f point = sf::Vector2f(boxBounds.left, boxBounds.top);
     if(distance(point, ball.getPosition()) < ballRadius) {
-        ball.dir.x *= -1;
-        ball.dir.y *= -1;
+        ball.dir.x *= -1;        
+        if(ball.dir.y < 0) ball.dir.y *= -(1+Ycolisionfactor);
         return true;
     }
     point = sf::Vector2f(boxBounds.left +boxBounds.width, boxBounds.top);
     if(distance(point, ball.getPosition()) < ballRadius) {
         ball.dir.x *= -1;
-        ball.dir.y *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= -(1+Ycolisionfactor);
         return true;
     }
     point = sf::Vector2f(boxBounds.left, boxBounds.top + boxBounds.height);
     if(distance(point, ball.getPosition()) < ballRadius) {
         ball.dir.x *= -1;
-        ball.dir.y *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= -(1+Ycolisionfactor);
         return true;
     }
     point = sf::Vector2f(boxBounds.left + boxBounds.width, boxBounds.top + boxBounds.height);
     if(distance(point, ball.getPosition()) < ballRadius)  {
         ball.dir.x *= -1;
-        ball.dir.y *= -1;
+        if(ball.dir.y < 0) ball.dir.y *= -(1+Ycolisionfactor);
         return true;
     }
-    
+    */
     return false;
 }
 
@@ -189,7 +197,6 @@ int main(){
                             int points = 5;
                             BoxWithPoints box(sf::Vector2f(boxSize, boxSize), points);
                             box.setPosition(sf::Vector2f(boxSize*i, 0));
-                            box.points = 10;
                             boxes.push_back(box);
                         }
                     }
@@ -263,6 +270,11 @@ int main(){
                         }
                         
                         if(ball->getPosition().y > size.y+ballRadius){
+                            if(balls.size() == 1){
+                                shooterPosition.x = ball->getPosition().x;
+                                shooterGuide.setPosition(shooterPosition);
+                                shooterGuide.setRotation(90);
+                            }
                             ball = balls.erase(ball);
                             std::cout << "erase" << std::endl;
                         }   

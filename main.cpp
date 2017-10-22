@@ -29,8 +29,78 @@ struct BoxWithPoints : public sf::RectangleShape {
     int points;   
 };
 
-bool isColision(sf::RectangleShape& box, sf::CircleShape& ball){
-        //implementIt
+float distance(const sf::Vector2f &orig, const sf::Vector2f &des) {
+    return std::sqrt(std::pow(std::abs(des.x-orig.x), 2) + std::pow(std::abs(des.y-orig.y), 2));
+}
+
+bool ballInBox(sf::RectangleShape& box, BallWithDirect& ball){
+    float ballRadius = ball.getRadius();
+    auto boxBounds = box.getGlobalBounds();
+    auto ballPos = ball.getPosition();
+    
+    sf::Vector2f point = sf::Vector2f(ballPos.x + ballRadius, ballPos.y);
+    if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
+       && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
+        ball.dir.x *= -1;
+        return true;
+        }
+    point = sf::Vector2f(ballPos.x - ballRadius, ballPos.y);
+    if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
+       && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
+        ball.dir.x *= -1;
+        return true;
+        }
+    point = sf::Vector2f(ballPos.x, ballPos.y + ballRadius);
+    if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
+       && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
+        ball.dir.y *= -1;
+        return true;
+        }
+    point = sf::Vector2f(ballPos.x, ballPos.y - ballRadius);
+    if(point.x > boxBounds.left && point.x < (boxBounds.left + boxBounds.width)
+       && point.y > boxBounds.top && point.y < (boxBounds.top + boxBounds.height)) {
+        ball.dir.y *= -1;
+        return true;
+        }
+    return false;
+    
+}
+
+bool isColision_andBounce(sf::RectangleShape& box, BallWithDirect& ball){
+    float ballRadius = ball.getRadius();
+    auto boxBounds = box.getGlobalBounds();
+    
+    if(ballInBox(box, ball)){
+        return true;
+    }
+    
+    //box in ball
+    sf::Vector2f point = sf::Vector2f(boxBounds.left, boxBounds.top);
+    if(distance(point, ball.getPosition()) < ballRadius) {
+        ball.dir.x *= -1;
+        ball.dir.y *= -1;
+        return true;
+    }
+    point = sf::Vector2f(boxBounds.left +boxBounds.width, boxBounds.top);
+    if(distance(point, ball.getPosition()) < ballRadius) {
+        ball.dir.x *= -1;
+        ball.dir.y *= -1;
+        return true;
+    }
+    point = sf::Vector2f(boxBounds.left, boxBounds.top + boxBounds.height);
+    if(distance(point, ball.getPosition()) < ballRadius) {
+        ball.dir.x *= -1;
+        ball.dir.y *= -1;
+        return true;
+    }
+    point = sf::Vector2f(boxBounds.left + boxBounds.width, boxBounds.top + boxBounds.height);
+    if(distance(point, ball.getPosition()) < ballRadius)  {
+        ball.dir.x *= -1;
+        ball.dir.y *= -1;
+        return true;
+    }
+    
+    return false;
 }
 
 int main(){
@@ -54,7 +124,7 @@ int main(){
     std::cout << "-> waiting" << std::endl;
     EState state = waiting;
     
-    float speed = size.x/10.0f;
+    float speed = size.x/50.0f;
     float deltatime = 0.0f;
     float shootingAngle = 0.0f;
     float timeBetweenShoots = 0.0f;
@@ -119,6 +189,7 @@ int main(){
                             int points = 5;
                             BoxWithPoints box(sf::Vector2f(boxSize, boxSize), points);
                             box.setPosition(sf::Vector2f(boxSize*i, 0));
+                            box.points = 10;
                             boxes.push_back(box);
                         }
                     }
@@ -135,7 +206,7 @@ int main(){
                     sf::Vector2i mousePos = sf::Mouse::getPosition(window);
                     shootingAngle = getAngle(shooterPosition, mousePos);
                     
-                    if(!sf::Mouse::isButtonPressed(sf::Mouse::Left) && (std::abs(shootingAngle) > 10 && std::abs(shootingAngle) < 180)){
+                    if(!sf::Mouse::isButtonPressed(sf::Mouse::Left) && (std::abs(shootingAngle) > 20 && std::abs(shootingAngle) < 160)){
                         std::cout << "-> bouncing" << std::endl;
                         state = bouncing;
                         ballsShooted = 0;
@@ -181,7 +252,10 @@ int main(){
                         ball->move(speed * ball->dir.x, speed * ball->dir.y);
                         
                         for (auto box = boxes.end() - 1; box != boxes.begin() - 1; box--){
-                           //if colision remove point from box
+                            if(isColision_andBounce(*box, *ball)){
+                                box->points -= 1;
+                                std::cout << "*" << std::endl;
+                            }
                             if(box->points <= 0){
                                 box = boxes.erase(box);
                                 std::cout << "killed erase box" << std::endl;
@@ -213,6 +287,7 @@ int main(){
             }
 
             for(auto box : boxes){                        
+                box.setFillColor(sf::Color(0.0f+10.0f*box.points,0.0f+10.0f*box.points,0.0f+10.0f*box.points));
                 window.draw(box);
             }
             

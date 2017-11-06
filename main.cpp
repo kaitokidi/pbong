@@ -198,7 +198,7 @@ int main(){
 
                     //create boxes
                     for(int i = 0; i < 8; ++i){
-                        if(std::rand()%2){
+                        if(std::rand()%4 == 0){
                             int points = 5;
                             BoxWithPoints box(sf::Vector2f(boxSize, boxSize), points);
                             box.setPosition(sf::Vector2f(boxSize*i, 0));
